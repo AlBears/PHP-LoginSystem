@@ -3,24 +3,12 @@
 
 require_once('includes/init.php');
 
-
-
+include('includes/header.php');
 
  ?>
 
-
-
-
-
-<!DOCTYPE html>
-<html lang="en">
-<head>
-	<meta charset="UTF-8">
-	<title>Example site</title>
-</head>
-<body>
-
 <h1>Home</h1>
 
-</body>
-</html>
+<p><a href="signup.php">Sign up</a></p>
+
+<?php include('includes/footer.php'); ?>
