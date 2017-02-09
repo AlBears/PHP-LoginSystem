@@ -105,5 +105,12 @@ class Auth
      }
    }
 
+   public function requireGuest()
+   {
+     if ($this->isLoggedIn()) {
+       Util::redirect('/index.php');
+     }
+   }
+
 
 }

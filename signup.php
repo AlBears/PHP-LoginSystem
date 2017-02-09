@@ -7,6 +7,9 @@
 // Initialisation
 require_once('includes/init.php');
 
+//Require user to NOT be logged in to access this page
+Auth::getInstance()->requireGuest();
+
 // Process the submitted form
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
@@ -15,8 +18,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   if (empty($user->errors)) {
 
   // Redirect to signup success page
-  header('Location: http://' . $_SERVER['HTTP_HOST'] . '/signup_success.php');
-  exit;
+  Util::redirect('/signup_success.php');
   }
 }
 

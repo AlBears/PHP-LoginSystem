@@ -7,6 +7,9 @@
 // Initialisation
 require_once('includes/init.php');
 
+//Require user to NOT be logged in to access this page
+Auth::getInstance()->requireGuest();
+
 // Process the submitted form
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
