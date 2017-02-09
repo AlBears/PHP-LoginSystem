@@ -36,9 +36,10 @@ class Auth
   *
   * @param string $email     Email address
   * @param string $password  Password
+  * @param boolean $remember_me Remember flag
   * @return boolean          true if the new user record was saved successfully, false otherwise
   */
-  public function login($email, $password)
+  public function login($email, $password, $remember_me)
 
   {
     $user = User::authenticate($email, $password);
@@ -46,10 +47,17 @@ class Auth
     if ($user !== null) {
       $this->_currentUser = $user;
 
-      //store user id in the session
-      $_SESSION['user_id'] = $user->id;
+      $this->_loginUser($user);
 
-      session_regenerate_id();
+      //Remember the login
+      if ($remember_me) {
+        $expiry = time() + 60 * 60 * 24 * 30; //30 days from now
+        $token = $user->rememberLogin($expiry);
+
+        if ($token !== false) {
+          setcookie('remember_token', $token, $expiry);
+        }
+      }
 
       return true;
     }
@@ -57,10 +65,8 @@ class Auth
     return false;
   }
 
-
   /**
    * Get the current logged in user
-   *
    * @return mixed  User object if logged in, null otherwise
    */
   public function getCurrentUser()
@@ -70,6 +76,11 @@ class Auth
 
         // Cache the object so that in a single request the data is loaded from the database only once.
         $this->_currentUser = User::findByID($_SESSION['user_id']);
+
+      } else {
+        //if session user id is not set we retrieve data from cookie
+        $this->_currentUser = $this->_loginFromCookie();
+
       }
     }
 
@@ -78,7 +89,6 @@ class Auth
 
   /**
    * Boolean indicator of whether the user is logged in or not
-   *
    * @return boolean
    */
   public function isLoggedIn()
@@ -88,7 +98,6 @@ class Auth
 
   /**
    * Redirect to the login if user is not logged in
-   *
    * @return void
    */
    public function requireLogin()
@@ -112,5 +121,28 @@ class Auth
      }
    }
 
+   private function _loginFromCookie()
+   {
+     if (isset($_COOKIE['remember_token'])) {
+
+     $user = User::findByRememberToken(sha1($_COOKIE['remember_token']));
+     if ($user !== null) {
+       $this->_loginUser($user);
+
+       return $user;
+     }
+   }
+   }
+   /**
+   * Login the user to the session
+   * @param User $user  User object
+   * @return void
+   */
+   private function _loginUser($user)
+   {
+     $_SESSION['user_id'] = $user->id;
+
+     session_regenerate_id();
+   }
 
 }

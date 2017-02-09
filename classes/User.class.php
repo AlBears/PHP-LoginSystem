@@ -83,7 +83,6 @@ class User
    * @return User
    */
   public static function signup($data)
-
   {
     $user = new static();
 
@@ -110,8 +109,69 @@ class User
    return $user;
  }
 
- public function isValid()
+ /**
+   * Find the user by remember token
+   * @param string $token  token
+   * @return mixed         User object if found, null otherwise
+   */
+  public static function findByRememberToken($token)
+  {
+    try {
 
+      $db = Database::getInstance();
+
+      $stmt = $db->prepare('SELECT u.* FROM users u JOIN remembered_logins r ON u.id = r.user_id WHERE token = :token');
+      $stmt->execute([':token' => $token]);
+      $user = $stmt->fetchObject('User');
+
+      if ($user !== false) {
+        return $user;
+      }
+
+    } catch(PDOException $exception) {
+
+      error_log($exception->getMessage());
+    }
+  }
+
+ /**
+   * Store unique token associated with user id
+   * @param integer $expiry  Expiry timestamp
+   * @return mixed           The token if remembered successfully, false otherwise
+   */
+ public function rememberLogin($expiry)
+ {
+   $token = uniqid($this->email, true);
+
+   try {
+
+      $db = Database::getInstance();
+
+      $stmt = $db->prepare('INSERT INTO remembered_logins (token, user_id, expires_at) VALUES (:token, :user_id, :expires_at)');
+      $stmt->bindParam(':token', sha1($token));  // store a hash of the token
+      $stmt->bindParam(':user_id', $this->id, PDO::PARAM_INT);
+      $stmt->bindParam(':expires_at', date('Y-m-d H:i:s', $expiry));
+      $stmt->execute();
+
+      if ($stmt->rowCount() == 1) {
+        return $token;
+      }
+
+    } catch(PDOException $exception) {
+
+      // Log the detailed exception
+      error_log($exception->getMessage());
+    }
+
+    return false;
+  }
+
+  /**
+    * Check errors array to learn whether validation passed
+    * @return boolean  Whether errrors array is empty or not
+    */
+
+ public function isValid()
  {
    $this->errors = [];
 

@@ -10,12 +10,15 @@ require_once('includes/init.php');
 //Require user to NOT be logged in to access this page
 Auth::getInstance()->requireGuest();
 
+//get checked status of checkbox
+$remember_me = isset($_POST['remember_me']);
+
 // Process the submitted form
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
   $email = $_POST['email'];
 
-  if (Auth::getInstance()->login($email, $_POST['password'])) {
+  if (Auth::getInstance()->login($email, $_POST['password'], $remember_me)) {
 
     // Redirect to home page or intended page, if set
     if (isset($_SESSION['return_to'])) {
@@ -51,6 +54,14 @@ include('includes/header.php');
   <div>
     <label for="password">Password</label>
     <input type="password" id="password" name="password" />
+  </div>
+
+  <div>
+    <label for="remember_me">
+      <input type="checkbox" id="remember_me" name="remember_me" value="1"
+        <?php if ($remember_me) : ?>checked="checked"<?php endif; ?>/> remember me
+    </label>
+
   </div>
 
   <input type="submit" value="Login" />
