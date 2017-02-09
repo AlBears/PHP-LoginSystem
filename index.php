@@ -10,7 +10,9 @@ include('includes/header.php');
 <h1>Home</h1>
 
 <?php if (Auth::getInstance()->isLoggedIn()) : ?>
-  <p>Hello <?php echo htmlspecialchars(Auth::getInstance()->getCurrentUser()->name); ?></p>
+  <p>Hello <?php echo htmlspecialchars(Auth::getInstance()->getCurrentUser()->name); ?>
+    <a href="logout.php">Log out</a>
+  </p>
 <?php else : ?>
 
 

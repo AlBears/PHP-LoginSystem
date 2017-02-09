@@ -24,6 +24,16 @@ class Auth
   }
 
   /**
+  * Logout a user
+  * @return void
+  */
+  public function logout()
+  {
+    $_SESSION = array();
+    session_destroy();
+  }
+
+  /**
   * Login a user
   *
   * @param string $email     Email address
