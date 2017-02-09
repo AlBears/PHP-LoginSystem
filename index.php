@@ -11,7 +11,7 @@ include('includes/header.php');
 
 <?php if (Auth::getInstance()->isLoggedIn()) : ?>
   <p>Hello <?php echo htmlspecialchars(Auth::getInstance()->getCurrentUser()->name); ?>
-    <a href="logout.php">Log out</a>
+    <a href="profile.php">View profile</a><a href="logout.php">Log out</a>
   </p>
 <?php else : ?>
 

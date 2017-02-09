@@ -8,13 +8,11 @@ class Auth
   private $_currentUser;
 
   public static function init()
-
   {
     session_start();
   }
 
   public static function getInstance()
-
   {
     if (static::$_instance === NULL) {
       static::$_instance = new Auth();
@@ -87,5 +85,25 @@ class Auth
   {
     return $this->getCurrentUser() !== null;
   }
+
+  /**
+   * Redirect to the login if user is not logged in
+   *
+   * @return void
+   */
+   public function requireLogin()
+   {
+     if (! $this->isLoggedIn()) {
+
+       //we save page user tried to view to Session
+       $url = $_SERVER['REQUEST_URI'];
+       if (! empty($url)) {
+         $_SESSION['return_to'] = $url;
+       }
+
+       Util::redirect('/login.php');
+     }
+   }
+
 
 }

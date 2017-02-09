@@ -13,8 +13,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   $email = $_POST['email'];
 
   if (Auth::getInstance()->login($email, $_POST['password'])) {
-    // Redirect to home page
-    Util::redirect('/index.php');
+
+    // Redirect to home page or intended page, if set
+    if (isset($_SESSION['return_to'])) {
+      $url = $_SESSION['return_to'];
+      unset($_SESSION['return_to']);
+    } else {
+      $url = '/index.php';
+    }
+
+    Util::redirect($url);
   }
 }
 
