@@ -167,10 +167,60 @@ class User
   }
 
   /**
+  * Deleted expired remember me tokens from database
+  *
+  * @return integer  Number of tokens deleted
+  */
+ public static function deleteExpiredTokens()
+ {
+   try {
+
+     $db = Database::getInstance();
+
+     $stmt = $db->prepare("DELETE FROM remembered_logins WHERE expires_at < '" . date('Y-m-d H:i:s') . "'");
+     $stmt->execute();
+
+     return $stmt->rowCount();
+
+   } catch(PDOException $exception) {
+
+     // Log the detailed exception
+     error_log($exception->getMessage());
+   }
+
+   return 0;
+ }
+
+  /**
+   * Forget the login based on the token value
+   *
+   * @param string $token  Remember token
+   * @return void
+   */
+  public function forgetLogin($token)
+  {
+    if ($token !== null) {
+
+      try {
+
+        $db = Database::getInstance();
+
+        $stmt = $db->prepare('DELETE FROM remembered_logins WHERE token = :token');
+        $stmt->bindParam(':token', $token);
+        $stmt->execute();
+
+      } catch(PDOException $exception) {
+
+        // Log the detailed exception
+        error_log($exception->getMessage());
+      }
+    }
+  }
+
+  /**
     * Check errors array to learn whether validation passed
     * @return boolean  Whether errrors array is empty or not
     */
-
  public function isValid()
  {
    $this->errors = [];
@@ -184,9 +234,9 @@ class User
      $this->errors['email'] = 'Please enter a valid email address';
    }
    /* Email validation - is email arlready taken?*/
-   if ($this->emailExists($this->email)) {
-     $this->errors['email'] = 'That email address is already taken';
-   }
+   if ($this->findByEmail($this->email) !== null) {
+      $this->errors['email'] = 'That email address is already taken';
+    }
    /* Password validation - minimum symbols*/
    if (strlen($this->password) < 5) {
      $this->errors['password'] = 'Please enter a longer password';
@@ -195,23 +245,4 @@ class User
    return empty($this->errors);
  }
 
- public function emailExists($email)
-
- {
-   try {
-     $db = Database::getInstance();
-
-      $stmt = $db->prepare('SELECT COUNT(*) FROM
-                        users WHERE email = :email
-                        LIMIT 1');
-
-      $stmt->execute([':email' => $this->email]);
-      $rowCount = $stmt->fetchColumn();
-      return $rowCount == 1;
-
-   } catch (PDOException $exception) {
-     error_log($exception->getMessage());
-     return false;
-   }
- }
 }

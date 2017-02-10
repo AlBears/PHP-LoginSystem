@@ -27,6 +27,13 @@ class Auth
   */
   public function logout()
   {
+    if (isset($_COOKIE['remember_token'])) {
+
+      $this->getCurrentUser()->forgetLogin(sha1($_COOKIE['remember_token']));
+
+      //time in the past will cause cookie to be erased
+      setcookie('remember_token', '', time() - 3600);
+    }
     $_SESSION = array();
     session_destroy();
   }
