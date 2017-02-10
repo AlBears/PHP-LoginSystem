@@ -191,6 +191,43 @@ class User
    return 0;
  }
 
+ /**
+  * Find the user for password reset, by the specified token and check the token hasn't expired
+  *
+  * @param string $token  Reset token
+  * @return mixed         User object if found and the token hasn't expired, null otherwise
+  */
+ public static function findForPasswordReset($token)
+ {
+   $hashed_token = sha1($token);
+
+   try {
+
+     $db = Database::getInstance();
+
+     $stmt = $db->prepare('SELECT * FROM users WHERE password_reset_token = :token LIMIT 1');
+     $stmt->execute([':token' => $hashed_token]);
+     $user = $stmt->fetchObject('User');
+
+     if ($user !== false) {
+
+       // Check the token hasn't expired
+       $expiry = DateTime::createFromFormat('Y-m-d H:i:s', $user->password_reset_expires_at);
+
+       if ($expiry !== false) {
+         if ($expiry->getTimestamp() > time()) {
+           return $user;
+         }
+       }
+     }
+
+   } catch(PDOException $exception) {
+
+     error_log($exception->getMessage());
+   }
+ }
+
+
   /**
    * Forget the login based on the token value
    *
@@ -216,6 +253,84 @@ class User
       }
     }
   }
+
+  /**
+  * Start the password reset process by generating a unique token and expiry and saving them in the user model
+  * @return boolean  True if the user model was updated successfully, false otherwise
+  */
+ public function startPasswordReset()
+ {
+   // Generate a random token and base64 encode it so it's URL safe
+   $token = base64_encode(uniqid(rand(), true));
+   $hashed_token = sha1($token);
+
+   // Set the token to expire in one hour
+   $expires_at = date('Y-m-d H:i:s', time() + 60 * 60);
+
+   try {
+
+     $db = Database::getInstance();
+
+     $stmt = $db->prepare('UPDATE users SET password_reset_token = :token, password_reset_expires_at = :expires_at WHERE id = :id');
+     $stmt->bindParam(':token', $hashed_token);
+     $stmt->bindParam(':expires_at', $expires_at);
+     $stmt->bindParam(':id', $this->id, PDO::PARAM_INT);
+     $stmt->execute();
+
+     if ($stmt->rowCount() == 1) {
+       $this->password_reset_token = $token;
+       $this->password_reset_expires_at = $expires_at;
+
+       return true;
+     }
+
+   } catch(PDOException $exception) {
+
+     // Log the detailed exception
+     error_log($exception->getMessage());
+   }
+
+   return false;
+ }
+
+ /**
+   * Reset the password
+   *
+   * @return boolean  true if the password was changed successfully, false otherwise
+   */
+  public function resetPassword()
+  {
+    $password_error = $this->_validatePassword();
+
+    if ($password_error === null) {
+
+      try {
+
+        $db = Database::getInstance();
+
+        $stmt = $db->prepare('UPDATE users SET password = :password, password_reset_token = NULL, password_reset_expires_at = NULL WHERE id = :id');
+        $stmt->bindParam(':password', Hash::make($this->password));
+        $stmt->bindParam(':id', $this->id, PDO::PARAM_INT);
+        $stmt->execute();
+
+        if ($stmt->rowCount() == 1) {
+          return true;
+        }
+
+      } catch(PDOException $exception) {
+
+        // Set generic error message and log the detailed exception
+        $this->errors = ['error' => 'A database error occurred.'];
+        error_log($exception->getMessage());
+      }
+
+    } else {
+      $this->errors['password'] = $password_error;
+    }
+
+    return false;
+  }
+
 
   /**
     * Check errors array to learn whether validation passed
@@ -244,5 +359,21 @@ class User
    /* Check whether errors array is empty and return boolean */
    return empty($this->errors);
  }
+
+ /**
+   * Validate the password
+   *
+   * @return mixed  The first error message if invalid, null otherwise
+   */
+  private function _validatePassword()
+  {
+    if (strlen($this->password) < 5) {
+      return 'Please enter a longer password';
+    }
+
+    if (isset($this->password_confirmation) && ($this->password != $this->password_confirmation)) {
+      return 'Please enter the same password';
+    }
+  }
 
 }

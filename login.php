@@ -65,6 +65,7 @@ include('includes/header.php');
   </div>
 
   <input type="submit" value="Login" />
+  <a href="forgot_password.php">I forgot my password</a>
 </form>
 
 <?php include('includes/footer.php'); ?>

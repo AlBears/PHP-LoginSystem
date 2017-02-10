@@ -128,6 +128,35 @@ class Auth
      }
    }
 
+   /**
+  * Send the user password reset email
+  * @param string $email  Email address
+  * @return void
+  */
+ public function sendPasswordReset($email)
+ {
+   $user = User::findByEmail($email);
+
+   if ($user !== null) {
+
+     if ($user->startPasswordReset()) {
+
+       // Note hardcoded protocol
+       $url = 'http://'.$_SERVER['HTTP_HOST'].'/reset_password.php?token=' . $user->password_reset_token;
+
+       $body = <<<EOT
+
+<p>Please click on the following link to reset your password.</p>
+
+<p><a href="$url">$url</a></p>
+
+EOT;
+
+       Mail::send($user->name, $user->email, 'Password reset', $body);
+     }
+   }
+ }
+
    private function _loginFromCookie()
    {
      if (isset($_COOKIE['remember_token'])) {

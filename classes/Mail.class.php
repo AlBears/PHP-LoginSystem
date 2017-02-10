@@ -32,7 +32,7 @@ class Mail
     $mail->Username = Config::SMTP_USER;
     $mail->Password = Config::SMTP_PASS;
     $mail->SMTPSecure = 'tls';
-    $mail->Port = 587;
+    $mail->Port = 2525;
 
     $mail->From = 'from@example.com';
 
