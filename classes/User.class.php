@@ -5,7 +5,6 @@ class User
   public $errors;
   /**
    * Authenticate a user by email and password
-   *
    * @param string $email     Email address
    * @param string $password  Password
    * @return mixed            User object if authenticated correctly, null otherwise
@@ -17,8 +16,11 @@ class User
 
     if ($user !== null) {
 
+      if ($user->is_active) { 
+
       if (Hash::check($password, $user->password)) {
         return $user;
+      }
       }
     }
   }
@@ -91,23 +93,34 @@ class User
     $user->password = $data['password'];
 
     if ($user->isValid()) {
+      //generate token for activation
+      $token = base64_encode(uniqid(rand(), true));
+      $hashed_token = sha1($token);
 
     try {
+
       $db = Database::getInstance();
 
-      $stmt = $db->prepare('INSERT INTO users (name, email, password)
-                            VALUES (:name, :email, :password)');
+      $stmt = $db->prepare('INSERT INTO users (name, email, password, activation_token)
+                            VALUES (:name, :email, :password, :token)');
 
       $stmt->bindParam(':name', $data['name']);
       $stmt->bindParam(':email', $data['email']);
       $stmt->bindParam(':password', Hash::make($data['password']));
+      $stmt->bindParam(':token', $hashed_token);
+
       $stmt->execute();
+
+      $user->_sendActivationEmail($token);
+
     } catch(PDOException $exception) {
       error_log($exception->getMessage());
     }
   }
    return $user;
  }
+
+
 
  /**
    * Find the user by remember token
@@ -375,5 +388,52 @@ class User
       return 'Please enter the same password';
     }
   }
+
+  /**
+   * Send activation email to the user based on the token
+   *
+   * @param string $token  Activation token
+   * @return mixed         User object if authenticated correctly, null otherwise
+   */
+  private function _sendActivationEmail($token)
+  {
+    // Note hardcoded protocol
+    $url = 'http://'.$_SERVER['HTTP_HOST'].'/activate_account.php?token=' . $token;
+
+    $body = <<<EOT
+
+<p>Please click on the following link to activate your account.</p>
+
+<p><a href="$url">$url</a></p>
+
+EOT;
+
+    Mail::send($this->name, $this->email, 'Activate account', $body);
+  }
+
+  /**
+   * Activate the user account, nullifying the activation token and setting the is_active flag
+   *
+   * @param string $token  Activation token
+   * @return void
+   */
+  public static function activateAccount($token)
+  {
+    $hashed_token = sha1($token);
+
+    try {
+
+      $db = Database::getInstance();
+
+      $stmt = $db->prepare('UPDATE users SET activation_token = NULL, is_active = TRUE WHERE activation_token = :token');
+      $stmt->execute([':token' => $hashed_token]);
+
+    } catch(PDOException $exception) {
+
+      // Log the detailed exception
+      error_log($exception->getMessage());
+    }
+  }
+
 
 }

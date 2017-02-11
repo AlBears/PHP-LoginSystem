@@ -14,6 +14,7 @@ Auth::getInstance()->requireGuest();
 // Process the submitted form
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
+
   $user = User::findForPasswordReset($_POST['token']);
 
   if ($user !== null) {

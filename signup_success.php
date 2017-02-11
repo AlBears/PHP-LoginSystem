@@ -15,7 +15,7 @@ include('includes/header.php');
 
 <h1>Sign Up</h1>
 
-<p>Success! Thank you for signing up. You can now <a href="login.php">log in</a>.</p>
+<p>Success! Thank you for signing up. Please check your email for account activation message.</p>
 
 
 <?php include('includes/footer.php'); ?>
