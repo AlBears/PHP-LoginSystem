@@ -128,7 +128,7 @@ class Auth
      }
    }
 
-   /**
+  /**
   * Send the user password reset email
   * @param string $email  Email address
   * @return void
@@ -157,7 +157,17 @@ EOT;
    }
  }
 
-   private function _loginFromCookie()
+ /**
+ * Wheterr user is logged in and has admin rights
+ * @return boolean
+ */
+
+ public function isAdmin()
+ {
+   return $this->isLoggedIn() && $this->getCurrentUser()->is_admin;
+ }
+
+ private function _loginFromCookie()
    {
      if (isset($_COOKIE['remember_token'])) {
 
