@@ -167,6 +167,19 @@ EOT;
    return $this->isLoggedIn() && $this->getCurrentUser()->is_admin;
  }
 
+ /**
+    * Show a forbidden message if the current logged in user is not an administrator.
+    * @return void
+    */
+   public function requireAdmin()
+   {
+     if ( ! $this->isAdmin()) {
+       Util::denyAccess();
+     }
+   }
+
+
+
  private function _loginFromCookie()
    {
      if (isset($_COOKIE['remember_token'])) {

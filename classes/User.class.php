@@ -3,54 +3,106 @@
 class User
 {
   public $errors;
-  /**
-   * Authenticate a user by email and password
-   * @param string $email     Email address
-   * @param string $password  Password
-   * @return mixed            User object if authenticated correctly, null otherwise
+
+/**
+   * Get a page of user records and the previous and next page (if there are any)
+   * @param string $page  Page number
+   * @return array        Previous page, next page and user data. Page elements are null if there isn't a previous or next page.
    */
-  public static function authenticate($email, $password)
-
+  public static function paginate($page)
   {
-    $user = static::findByEmail($email);
+    $data = [];
+    $users_per_page = 5;
 
-    if ($user !== null) {
+    // Calculate the total number of pages
+    $total_users = static::_getTotalUsers();
+    $total_pages = (int) ceil($total_users / $users_per_page);
 
-      if ($user->is_active) { 
 
-      if (Hash::check($password, $user->password)) {
-        return $user;
-      }
-      }
+    // Make sure the current page is valid
+    $page = (int) $page;
+
+    if ($page < 1) {
+      $page = 1;
+    } elseif ($page > $total_pages) {
+      $page = $total_pages;
     }
-  }
 
-  /**
-   * Find the user with the specified email address
-   *
-   * @param string $email  email address
-   * @return mixed         User object if found, null otherwise
-   */
-  public static function findByEmail($email)
 
-  {
+    // Calculate the next and previous pages
+    $data['previous'] = $page == 1 ? null : $page - 1;
+    $data['next'] = $page == $total_pages ? null : $page + 1;
+
+
+    // Get the page of users
     try {
 
       $db = Database::getInstance();
 
-      $stmt = $db->prepare('SELECT * FROM users WHERE email = :email LIMIT 1');
-      $stmt->execute([':email' => $email]);
-      $user = $stmt->fetchObject('User');
+      $offset = ($page - 1) * $users_per_page;
 
-      if ($user !== false) {
-        return $user;
-      }
+      $data['users'] = $db->query("SELECT * FROM users ORDER BY email LIMIT $users_per_page OFFSET $offset")->fetchAll();
 
     } catch(PDOException $exception) {
 
       error_log($exception->getMessage());
+
+      $data['users'] = [];
+    }
+
+    return $data;
+  }
+
+
+
+/**
+ * Authenticate a user by email and password
+ * @param string $email     Email address
+ * @param string $password  Password
+ * @return mixed            User object if authenticated correctly, null otherwise
+ */
+public static function authenticate($email, $password)
+
+{
+  $user = static::findByEmail($email);
+
+  if ($user !== null) {
+
+    if ($user->is_active) {
+
+    if (Hash::check($password, $user->password)) {
+      return $user;
+    }
     }
   }
+}
+
+/**
+ * Find the user with the specified email address
+ *
+ * @param string $email  email address
+ * @return mixed         User object if found, null otherwise
+ */
+public static function findByEmail($email)
+
+{
+  try {
+
+    $db = Database::getInstance();
+
+    $stmt = $db->prepare('SELECT * FROM users WHERE email = :email LIMIT 1');
+    $stmt->execute([':email' => $email]);
+    $user = $stmt->fetchObject('User');
+
+    if ($user !== false) {
+      return $user;
+    }
+
+  } catch(PDOException $exception) {
+
+    error_log($exception->getMessage());
+  }
+}
 
   /**
    * Find the user with the specified ID
@@ -433,6 +485,27 @@ EOT;
       // Log the detailed exception
       error_log($exception->getMessage());
     }
+  }
+
+  /**
+   * Get the total number of users
+   *
+   * @return integer
+   */
+  private static function _getTotalUsers()
+  {
+    try {
+
+      $db = Database::getInstance();
+      $count = (int) $db->query('SELECT COUNT(*) FROM users')->fetchColumn();
+
+    } catch(PDOException $exception) {
+
+      error_log($exception->getMessage());
+      $count = 0;
+    }
+
+    return $count;
   }
 
 

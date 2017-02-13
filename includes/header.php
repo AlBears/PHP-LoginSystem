@@ -13,7 +13,7 @@
       <?php if (Auth::getInstance()->isLoggedIn()): ?>
 
         <?php if (Auth::getInstance()->isAdmin()): ?>
-          <li>Admin</li>
+          <li><a href="/admin/users">Admin</a></li>
         <?php endif; ?>
         <li><a href="/profile.php">Profile</a></li>
         <li><a href="/logout.php">Logout</a></li>
