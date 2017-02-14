@@ -29,7 +29,7 @@ include('../../includes/header.php');
   <tbody>
     <?php foreach ($data['users'] as $user): ?>
       <tr>
-        <td><?php echo htmlspecialchars($user['name']); ?></td>
+        <td><a href="/admin/users/show.php?id=<?php echo $user['id']; ?>"><?php echo htmlspecialchars($user['name']); ?></a></td>
         <td><?php echo htmlspecialchars($user['email']); ?></td>
       </tr>
     <?php endforeach; ?>
