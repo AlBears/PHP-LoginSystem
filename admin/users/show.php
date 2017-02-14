@@ -7,16 +7,7 @@ Auth::getInstance()->requireLogin();
 
 Auth::getInstance()->requireAdmin();
 
-
-if (isset($_GET['id'])) {
-  $user = User::findByID($_GET['id']);
-}
-
-if (!isset($user)) {
-  header('HTTP/1.0 404 Not Found');
-  echo '404 Not Found';
-  exit;
-}
+$user = User::getByIDor404($_GET);
 
 include('../../includes/header.php');
 
@@ -36,5 +27,10 @@ include('../../includes/header.php');
   <dt>Administrator</dt>
   <dd><?php echo $user->is_admin ? '&#10004;' : '&#10008;'; ?></dd>
 </dl>
+
+<ul>
+  <li><a href="/admin/users/edit.php?id=<?php echo $user->id; ?>">Edit</a></li>
+</ul>
+
 
 <?php include('../../includes/footer.php'); ?>

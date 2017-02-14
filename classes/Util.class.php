@@ -27,4 +27,11 @@ class Util
     echo '403 Forbidden';
     exit;
   }
+
+  public static function showNotFound()
+  {
+    header('HTTP/1.0 404 Not Found');
+    echo '404 Not Found';
+    exit;
+  }
 }

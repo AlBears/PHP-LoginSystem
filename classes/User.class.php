@@ -414,12 +414,13 @@ public static function findByEmail($email)
      $this->errors['email'] = 'Please enter a valid email address';
    }
    /* Email validation - is email arlready taken?*/
-   if ($this->findByEmail($this->email) !== null) {
-      $this->errors['email'] = 'That email address is already taken';
-    }
+   if ($this->_emailTaken($this->email)) {
+        $this->errors['email'] = 'That email address is already taken';
+      }
    /* Password validation - minimum symbols*/
-   if (strlen($this->password) < 5) {
-     $this->errors['password'] = 'Please enter a longer password';
+   $password_error = $this->_validatePassword();
+   if ($password_error !== null) {
+     $this->errors['password'] = $password_error;
    }
    /* Check whether errors array is empty and return boolean */
    return empty($this->errors);
@@ -430,16 +431,16 @@ public static function findByEmail($email)
    *
    * @return mixed  The first error message if invalid, null otherwise
    */
-  private function _validatePassword()
-  {
-    if (strlen($this->password) < 5) {
-      return 'Please enter a longer password';
-    }
+   private function _validatePassword()
+   {
+     if (isset($this->password) && (strlen($this->password) < 5)) {
+       return 'Please enter a longer password';
+     }
 
-    if (isset($this->password_confirmation) && ($this->password != $this->password_confirmation)) {
-      return 'Please enter the same password';
-    }
-  }
+     if (isset($this->password_confirmation) && ($this->password != $this->password_confirmation)) {
+       return 'Please enter the same password';
+     }
+   }
 
   /**
    * Send activation email to the user based on the token
@@ -507,6 +508,117 @@ EOT;
 
     return $count;
   }
+  /**
+  * Get user ID or display error
+  * @param array $data  $_GET
+  * @return User object if found, null if not
+  */
+
+  public static function getByIDor404($data)
+  {
+    if (isset($data['id'])) {
+      $user = static::findByID($data['id']);
+
+      if ($user !== null) {
+        return $user;
+      }
+    }
+
+    Util::showNotFound();
+  }
+
+  /**
+   * Update the existing users details based on the data. Data is validated and $this->errors is set if
+   * if any values are invalid.
+   *
+   * @param array $data  Updated data ($_POST array)
+   * @return boolean     True if the values were updated successfully, false otherwise.
+   */
+  public function save($data)
+  {
+    $this->name = $data['name'];
+    $this->email = $data['email'];
+
+    // Only validate and update the password if a value provided
+    if (empty($data['password'])) {
+      unset($this->password);
+    } else {
+      $this->password = $data['password'];
+    }
+
+    // Convert values of the checkboxes to boolean
+    $this->is_active = isset($data['is_active']) && ($data['is_active'] == '1');
+    $this->is_admin = isset($data['is_admin']) && ($data['is_admin'] == '1');
+
+    if ($this->isValid()) {
+
+      try {
+
+        $db = Database::getInstance();
+
+        // Prepare the SQL
+        $sql = 'UPDATE users SET name = :name, email = :email, is_active = :is_active, is_admin = :is_admin';
+
+        if (isset($this->password)) {  // only update password if set
+          $sql .= ', password = :password';
+        }
+
+        $sql .= ' WHERE id = :id';
+
+        $stmt = $db->prepare($sql);
+        $stmt->bindParam(':name', $this->name);
+        $stmt->bindParam(':email', $this->email);
+
+        if (isset($this->password)) {  // only update password if set
+          $stmt->bindParam(':password', Hash::make($this->password));
+        }
+
+        $stmt->bindParam(':is_active', $this->is_active);
+        $stmt->bindParam(':is_admin', $this->is_admin);
+        $stmt->bindParam(':id', $this->id, PDO::PARAM_INT);
+        $stmt->execute();
+
+        return true;
+
+      } catch(PDOException $exception) {
+
+        // Set generic error message and log the detailed exception
+        $this->errors = ['error' => 'A database error occurred.'];
+        error_log($exception->getMessage());
+      }
+    }
+
+    return false;
+  }
+
+  /**
+   * See if the email address is taken (already exists), ignoring the current user if already saved.
+   *
+   * @param string $email  Email address
+   * @return boolean       True if the email is taken, false otherwise
+   */
+  private function _emailTaken($email)
+  {
+    $isTaken = false;
+    $user = $this->findByEmail($email);
+
+    if ($user !== null) {
+
+      if (isset($this->id)) {  // existing user
+
+        if ($this->id != $user->id) {  // different user
+          $isTaken = true;
+        }
+
+      } else {  // new user
+        $isTaken = true;
+      }
+    }
+
+    return $isTaken;
+  }
+
+
 
 
 }
