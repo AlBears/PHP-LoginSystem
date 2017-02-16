@@ -618,7 +618,27 @@ EOT;
     return $isTaken;
   }
 
+  /**
+   * Delete the user.
+   *
+   * @return void
+   */
+  public function delete()
+  {
+    try {
 
+      $db = Database::getInstance();
+
+      $stmt = $db->prepare('DELETE FROM users WHERE id = :id');
+      $stmt->bindParam(':id', $this->id, PDO::PARAM_INT);
+      $stmt->execute();
+
+    } catch(PDOException $exception) {
+
+      // Log the detailed exception
+      error_log($exception->getMessage());
+    }
+  }
 
 
 }

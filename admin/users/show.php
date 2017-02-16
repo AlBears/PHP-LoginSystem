@@ -30,6 +30,7 @@ include('../../includes/header.php');
 
 <ul>
   <li><a href="/admin/users/edit.php?id=<?php echo $user->id; ?>">Edit</a></li>
+  <li><a href="/admin/users/delete.php?id=<?php echo $user->id; ?>">Delete</a></li>
 </ul>
 
 
