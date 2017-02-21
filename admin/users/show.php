@@ -30,7 +30,13 @@ include('../../includes/header.php');
 
 <ul>
   <li><a href="/admin/users/edit.php?id=<?php echo $user->id; ?>">Edit</a></li>
-  <li><a href="/admin/users/delete.php?id=<?php echo $user->id; ?>">Delete</a></li>
+  <li>
+    <?php if ($user->id == Auth::getInstance()->getCurrentUser()->id): ?>
+      Delete
+    <?php else: ?>
+      <a href="/admin/users/delete.php?id=<?php echo $user->id; ?>">Delete</a>
+    <?php endif; ?>
+  </li>
 </ul>
 
 
