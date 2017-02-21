@@ -19,6 +19,8 @@ include('../../includes/header.php');
 
 <h1>Users</h1>
 
+<p><a href="/admin/users/new.php">Add new user</a></p>
+
 <table>
   <thead>
     <tr>

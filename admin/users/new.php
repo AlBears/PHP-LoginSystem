@@ -1,7 +1,7 @@
 <?php
 
 /**
- * User admin - edit a user
+ * User admin - add a new user
  */
 
 // Initialisation
@@ -13,15 +13,13 @@ Auth::getInstance()->requireLogin();
 // Require the user to be an administrator before they can see this page.
 Auth::getInstance()->requireAdmin();
 
-// Find the user or show a 404 page.
-$user = User::getByIDor404($_GET);
 
+$user = new User();
 
 // Process the submitted form
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
   if ($user->save($_POST)) {
-
     // Redirect to show page
     Util::redirect('/admin/users/show.php?id=' . $user->id);
   }
@@ -33,9 +31,8 @@ include('../../includes/header.php');
 
 ?>
 
-<h1>Edit User</h1>
+<h1>New User</h1>
 
 <?php include('form.php'); ?>
-
 
 <?php include('../../includes/footer.php'); ?>

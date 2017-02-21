@@ -4,6 +4,11 @@ class User
 {
   public $errors;
 
+  public function __get($name)
+  {
+
+  }
+
 /**
    * Get a page of user records and the previous and next page (if there are any)
    * @param string $page  Page number
@@ -528,19 +533,19 @@ EOT;
   }
 
   /**
-   * Update the existing users details based on the data. Data is validated and $this->errors is set if
+   * Update or insert the user's details based on the data. Data is validated and $this->errors is set if
    * if any values are invalid.
    *
-   * @param array $data  Updated data ($_POST array)
-   * @return boolean     True if the values were updated successfully, false otherwise.
+   * @param array $data  Data ($_POST array)
+   * @return boolean     True if the values were updated / inserted successfully, false otherwise.
    */
   public function save($data)
   {
     $this->name = $data['name'];
     $this->email = $data['email'];
 
-    // Only validate and update the password if a value provided
-    if (empty($data['password'])) {
+    // If editing a user, only validate and update the password if a value provided
+    if (isset($this->id) && empty($data['password'])) {
       unset($this->password);
     } else {
       $this->password = $data['password'];
@@ -556,27 +561,46 @@ EOT;
 
         $db = Database::getInstance();
 
-        // Prepare the SQL
-        $sql = 'UPDATE users SET name = :name, email = :email, is_active = :is_active, is_admin = :is_admin';
+        // Prepare the SQL: Update the existing record if editing, or insert new if adding
+        if (isset($this->id)) {
 
-        if (isset($this->password)) {  // only update password if set
-          $sql .= ', password = :password';
+          $sql = 'UPDATE users SET name = :name, email = :email, is_active = :is_active, is_admin = :is_admin';
+
+          if (isset($this->password)) {  // only update password if set
+            $sql .= ', password = :password';
+          }
+
+          $sql .= ' WHERE id = :id';
+
+        } else {
+
+          $sql = 'INSERT INTO users (name, email, password, is_active, is_admin) VALUES (:name, :email, :password, :is_active, :is_admin)';
         }
 
-        $sql .= ' WHERE id = :id';
-
+        // Bind the parameters
         $stmt = $db->prepare($sql);
         $stmt->bindParam(':name', $this->name);
         $stmt->bindParam(':email', $this->email);
+        $stmt->bindParam(':is_active', $this->is_active);
+        $stmt->bindParam(':is_admin', $this->is_admin);
 
-        if (isset($this->password)) {  // only update password if set
+        if (isset($this->id)) {
+          if (isset($this->password)) {  // only update password if set
+            $stmt->bindParam(':password', Hash::make($this->password));
+          }
+
+          $stmt->bindParam(':id', $this->id, PDO::PARAM_INT);
+
+        } else {
           $stmt->bindParam(':password', Hash::make($this->password));
         }
 
-        $stmt->bindParam(':is_active', $this->is_active);
-        $stmt->bindParam(':is_admin', $this->is_admin);
-        $stmt->bindParam(':id', $this->id, PDO::PARAM_INT);
         $stmt->execute();
+
+        // Set the ID if a new record
+        if ( ! isset($this->id)) {
+          $this->id = $db->lastInsertId();
+        }
 
         return true;
 
@@ -590,7 +614,6 @@ EOT;
 
     return false;
   }
-
   /**
    * See if the email address is taken (already exists), ignoring the current user if already saved.
    *
