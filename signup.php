@@ -42,22 +42,22 @@ include('includes/header.php');
 <?php endif; ?>
 
 
-<form method="post">
+<form method="post" id="signupForm">
   <div>
     <label for="name">Name</label>
-    <input id="name" name="name"
+    <input id="name" name="name" required="required"
     value="<?php echo isset($user) ? htmlspecialchars($user->name) : '';?>"/>
   </div>
 
   <div>
     <label for="email">email address</label>
-    <input id="email" name="email"
+    <input id="email" name="email" required="required" type="email"
     value="<?php echo isset($user) ? htmlspecialchars($user->email) : '';?>"/>
   </div>
 
   <div>
     <label for="password">Password</label>
-    <input type="password" id="password" name="password" />
+    <input type="password" id="password" name="password" required="required" pattern=".{5,}" title="minimum 5 characters"/>
   </div>
 
   <input type="submit" value="Sign Up" />

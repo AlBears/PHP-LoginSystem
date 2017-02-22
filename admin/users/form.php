@@ -6,15 +6,15 @@
   </ul>
 <?php endif; ?>
 
-<form method="post">
+<form method="post" id="userForm">
   <div>
     <label for="name">Name</label>
-    <input id="name" name="name" value="<?php echo htmlspecialchars($user->name); ?>" />
+    <input id="name" name="name" required="required" value="<?php echo htmlspecialchars($user->name); ?>" />
   </div>
 
   <div>
     <label for="email">email address</label>
-    <input id="email" name="email" value="<?php echo htmlspecialchars($user->email); ?>" />
+    <input id="email" name="email" required="required" type="email" value="<?php echo htmlspecialchars($user->email); ?>" />
   </div>
 
   <div>
@@ -56,3 +56,7 @@
   <input type="submit" value="Save" />
   <a href="/admin/users<?php if (isset($user->id)) { echo '/show.php?id=' . $user->id; } ?>">Cancel</a>
 </form>
+
+<script>
+  $userID = <?php echo isset($user->id) ? $user->id : 'null'; ?>
+</script>
